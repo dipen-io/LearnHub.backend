@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { Course } from "src/schema/type";
-import { courseFilter, ICourses } from "./interfaces/course.interface";
+// import { Course } from "src/schema/type";
+import { courseFilter } from "./interfaces/course.interface";
 import { CreateCourseDto } from "./dto/create-course.dto";
 import { db } from "src/config/db";
 import { course, instructorProfiles } from "src/schema";
@@ -33,6 +33,10 @@ export class CourseService {
         data: [],
       };
     }
+
+    //TODO:
+    // while if there is course then
+    // i need to check if that course is already in cart or wishlist or not
 
     const cleanedCourses = course.map((course) => ({
       id: course.id,
@@ -98,7 +102,6 @@ export class CourseService {
 
   //create course
   async create_course(createCourseDto: CreateCourseDto, instructorId: number, file?: Express.Multer.File) {
-
 
     // Check if the instructorId is valid or not
     const validUserId = await db.query.instructorProfiles.findFirst({
