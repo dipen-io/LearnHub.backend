@@ -14,6 +14,7 @@ import { AdminModule } from './admin/admin.module';
 import { CartModule } from './cart/cart.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { CategoryModule } from './category/category.module';
+import { BannersModule } from './banners/banners.module';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { CategoryModule } from './category/category.module';
 
     JwtModule.register({
       secret: env.JWT_ACCESS_SECRET,
-      signOptions: {expiresIn: "15m" },
+      signOptions: { expiresIn: "15m" },
     }),
 
     HealthModule,
@@ -36,6 +37,7 @@ import { CategoryModule } from './category/category.module';
     CartModule,
     WishlistModule,
     CategoryModule,
+    BannersModule,
   ],
   controllers: [],
   providers: [
@@ -44,6 +46,6 @@ import { CategoryModule } from './category/category.module';
       useValue: db,
     },
   ],
-    exports:[JwtModule]
+  exports: [JwtModule]
 })
-export class AppModule {}
+export class AppModule { }
