@@ -1,0 +1,61 @@
+import { jsonb, timestamp, pgTable, text, integer, uuid, pgEnum, boolean, varchar, index } from "drizzle-orm/pg-core";
+
+export const bannerTypeEnum = pgEnum('banner_type', [
+    'hero_carousel',
+    'promo_strip',
+    'announcement',
+    'course_featured',
+    'category_pills'
+]);
+
+export const bannerPositionEnum = pgEnum('banner_position', [
+    'home_top',
+    'home_middled',
+    'explore_banner',
+    'profile_banner',
+    'my_learning_top'
+]);
+
+export const bannerPlatformEnum = pgEnum('banner_platform', [
+    'all',
+    'ios',
+    'android'
+]);
+
+export const targetAudienceEnum = pgEnum('target_audience', [
+    'all',
+]);
+
+export const banners = pgTable("banners", {
+
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    type: bannerTypeEnum('type').notNull(),
+    position: bannerPositionEnum('position').notNull(),
+    priority: integer('priority').notNull().default(0),
+    isActive: boolean('is_active').notNull().default(true),
+    platform: bannerPlatformEnum('platform').notNull().default('all'),
+    appVersionMin: varchar('app_version_min'),
+    appVersionMax: varchar('app_version_max'),
+    targetAudience: targetAudienceEnum('target_audience').notNull().default('all'),
+
+    targetCategories: varchar('target_categories').array(),
+    startAt: timestamp('start_at', { withTimezone: true }),
+    endAt: timestamp('end_at', { withTimezone: true }),
+
+    content: jsonb('content').notNull(),
+    impressions: integer('impressions').notNull().default(0),
+    clicks: integer('clicks').notNull().default(0),
+
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updated_at: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => {
+    return {
+        positionActiveDatesIdx: index('banners_position_is_active_start_end_idx').on(
+            table.position,
+            table.isActive,
+            table.startAt,
+            table.endAt,
+        ),
+    }
+})
