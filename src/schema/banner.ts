@@ -71,6 +71,8 @@ import {
     jsonb,
     pgEnum,
 } from 'drizzle-orm/pg-core';
+import { users } from './users';
+import { course } from './course';
 
 export const bannerTypeEnum = pgEnum('banner_type', [
     'hero_carousel',
@@ -119,6 +121,10 @@ export const banners = pgTable('banners', {
     content: jsonb('content').$type<Record<string, any>>().notNull(),
     impressions: integer('impressions').default(0).notNull(),
     clicks: integer('clicks').default(0).notNull(),
+    createdBy: uuid('created_by').references(() => users.id),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+
+    // featuredCourseId: uuid('featured_course_id').references(() => course.id),
+    // featuredInstructorId: uuid('featured_instructor_id').references(() => users.id),
 });

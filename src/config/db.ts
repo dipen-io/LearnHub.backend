@@ -1,3 +1,5 @@
+//src/config/db.ts
+
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { env } from './env.config';
@@ -12,10 +14,10 @@ const pool = new Pool({
   ...(isDev
     ? {}
     : {
-        ssl: {
-          rejectUnauthorized: false, // Supabase requires SSL, but allows self-signed certs
-        },
-      }),
+      ssl: {
+        rejectUnauthorized: false, // Supabase requires SSL, but allows self-signed certs
+      },
+    }),
 });
 
 // export const db = drizzle(pool);
