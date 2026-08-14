@@ -10,8 +10,15 @@ export class BannersController {
     constructor(private readonly bannerService: BannersService) { }
 
     @Get()
-    findActive(@Query() query: QueryBannersDto) {
-        return this.bannerService.findActive(query)
+    async findActive(@Query() query: QueryBannersDto) {
+        const banners = await this.bannerService.findActive(query)
+
+        return {
+            success: true,
+            statusCode: 200,
+            message: 'Banner fetch successfully',
+            data: banners,
+        }
     }
 
     @Post(':id/track')

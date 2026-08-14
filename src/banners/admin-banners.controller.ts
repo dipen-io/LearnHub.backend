@@ -11,8 +11,15 @@ export class AdminBannerController {
     constructor(private readonly bannersSerrvice: BannersService) { }
 
     @Post()
-    create(@Body() dto: CreateBannerDto) {
-        return this.bannersSerrvice.create(dto);
+    async create(@Body() dto: CreateBannerDto) {
+        // return this.bannersSerrvice.create(dto);
+        const banner = await this.bannersSerrvice.create(dto);
+        return {
+            success: true,
+            statusCode: 201,
+            message: 'Banner created successfully',
+            data: banner,
+        }
     }
 
     @Get()
