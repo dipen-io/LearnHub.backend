@@ -92,21 +92,21 @@ export class UserService {
     }
   }
 
-async findAll(
-  search: string = '',
-  limit: number = 30,
-  page: number = 1,
-  type: userTypes = "users",
-  status?: string,
-) {
-  try {
-    const skip = (page - 1) * limit;
+  async findAll(
+    search: string = '',
+    limit: number = 30,
+    page: number = 1,
+    type: userTypes = "users",
+    status?: string,
+  ) {
+    try {
+      const skip = (page - 1) * limit;
 
-    if (type === 'students') {
-      const condition = [];
-      if (search) {
-          condition.push(ilike(studentProfile.learningGoals,`%${search}%` ));
-       }
+      if (type === 'students') {
+        const condition = [];
+        if (search) {
+          condition.push(ilike(studentProfile.learningGoals, `%${search}%`));
+        }
 
         //NO NEED I GUESS
         // if (status == "active") {
@@ -115,18 +115,80 @@ async findAll(
         //      condition.push(eq(users.isActive, false));
         // }
 
+        const query = db
+          .select() // select all columns
+          .from(studentProfile)
+          .innerJoin(users, eq(users.id, studentProfile.userId))
+          .where(and(...condition));
+
+        const total = (await query.execute()).length;
+        const data = await query.limit(limit).offset(skip).execute();
+
+        return {
+          success: true,
+          message: `student fetched successfully`,
+          data,
+          pagination: {
+            total,
+            page,
+            limit,
+            totalPage: Math.ceil(total / limit),
+          },
+        };
+      }
+
+      // users query
       const query = db
         .select() // select all columns
-        .from(studentProfile)
-        .innerJoin(users, eq(users.id, studentProfile.userId))
-        .where(and(...condition));
+        .from(users)
+        .where(
+          and(
+            // Always filter by role
+            eq(users.role, userRole.User),
+
+            // Optional search filter
+            search
+              ? or(
+                ilike(users.fullName, `%${search}%`),
+                ilike(users.email, `%${search}%`),
+                ilike(users.phoneNumber, `%${search}%`)
+              )
+              : undefined,
+
+            // Optional status filter
+            status === 'active'
+              ? eq(users.isActive, true)
+              : status === 'inactive'
+                ? eq(users.isActive, false)
+                : undefined
+          )
+        );
+
+      // users query
+      // const query = db
+      //   .select() // select all columns
+      //   .from(users)
+      //   .where(
+      //     (search || true) // we will combine search and role filter
+      //       ? and(
+      //           eq(users.role, userRole.User ),
+      //           search
+      //             ? or(
+      //                 ilike(users.fullName, `%${search}%`),
+      //                 ilike(users.email, `%${search}%`),
+      //                 ilike(users.phoneNumber, `%${search}%`)
+      //               )
+      //             : undefined
+      //         )
+      //       : undefined
+      //   );
 
       const total = (await query.execute()).length;
       const data = await query.limit(limit).offset(skip).execute();
 
       return {
         success: true,
-        message: `student fetched successfully`,
+        message: `user fetched successfully`,
         data,
         pagination: {
           total,
@@ -135,76 +197,14 @@ async findAll(
           totalPage: Math.ceil(total / limit),
         },
       };
+    } catch (error) {
+      console.error('DB error:', error);
+      return {
+        status: 'error',
+        message: 'Internal server error',
+      };
     }
-
-// users query
-const query = db
-  .select() // select all columns
-  .from(users)
-  .where(
-    and(
-      // Always filter by role
-      eq(users.role, userRole.User),
-
-      // Optional search filter
-      search
-        ? or(
-            ilike(users.fullName, `%${search}%`),
-            ilike(users.email, `%${search}%`),
-            ilike(users.phoneNumber, `%${search}%`)
-          )
-        : undefined,
-
-      // Optional status filter
-      status === 'active'
-        ? eq(users.isActive, true)
-        : status === 'inactive'
-        ? eq(users.isActive, false)
-        : undefined
-    )
-  );
-
-    // users query
-    // const query = db
-    //   .select() // select all columns
-    //   .from(users)
-    //   .where(
-    //     (search || true) // we will combine search and role filter
-    //       ? and(
-    //           eq(users.role, userRole.User ),
-    //           search
-    //             ? or(
-    //                 ilike(users.fullName, `%${search}%`),
-    //                 ilike(users.email, `%${search}%`),
-    //                 ilike(users.phoneNumber, `%${search}%`)
-    //               )
-    //             : undefined
-    //         )
-    //       : undefined
-    //   );
-
-    const total = (await query.execute()).length;
-    const data = await query.limit(limit).offset(skip).execute();
-
-    return {
-      success: true,
-      message: `user fetched successfully`,
-      data,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPage: Math.ceil(total / limit),
-      },
-    };
-  } catch (error) {
-    console.error('DB error:', error);
-    return {
-      status: 'error',
-      message: 'Internal server error',
-    };
   }
-}
 
   //ME
   async profile(userId: number) {
@@ -214,36 +214,36 @@ const query = db
     })
 
     const [studentDetails, instructorDetails] = await Promise.all([
-        db.query.studentProfile.findFirst({
-          where: eq(studentProfile.userId, userId),
-        }),
-        db.query.instructorProfiles.findFirst({
-          where: eq(instructorProfiles.userId, userId),
-        }),
-      ]);
+      db.query.studentProfile.findFirst({
+        where: eq(studentProfile.userId, userId),
+      }),
+      db.query.instructorProfiles.findFirst({
+        where: eq(instructorProfiles.userId, userId),
+      }),
+    ]);
 
     const formatedResponse = plainToInstance(UserResponseDto, user, {
-        excludeExtraneousValues: true,
+      excludeExtraneousValues: true,
     })
 
     const finalResponse = {
-        success: true,
-        data: cleanNullUndefined(formatedResponse), // Base User Data
+      success: true,
+      data: cleanNullUndefined(formatedResponse), // Base User Data
 
-        studentData: studentDetails
-          ? {
-              learningGoals: studentDetails.learningGoals || '',
-              preferences: studentDetails.preferences || {},
-            }
-          : null,
+      studentData: studentDetails
+        ? {
+          learningGoals: studentDetails.learningGoals || '',
+          preferences: studentDetails.preferences || {},
+        }
+        : null,
 
-        instructorData: instructorDetails
-          ? {
-              id: instructorDetails.id,
-            }
-          : null,
-      };
-      return finalResponse;
+      instructorData: instructorDetails
+        ? {
+          id: instructorDetails.id,
+        }
+        : null,
+    };
+    return finalResponse;
   }
 
   //LOGIN
@@ -251,19 +251,19 @@ const query = db
     const { email, password, phoneNumber, Roles } = loginDto;
     const conditions = [];
     if (email || phoneNumber) {
-        conditions.push(
-        or(email ? eq(users.email, email): undefined,
-            phoneNumber ? eq(users.phoneNumber, phoneNumber) : undefined,
-          )
-       )
+      conditions.push(
+        or(email ? eq(users.email, email) : undefined,
+          phoneNumber ? eq(users.phoneNumber, phoneNumber) : undefined,
+        )
+      )
     }
     if (Roles) {
-        conditions.push(eq(users.role, Roles));
-     }
+      conditions.push(eq(users.role, Roles));
+    }
 
     const user = await db.query.users.findFirst({
-            where: and(...conditions),
-        })
+      where: and(...conditions),
+    })
     if (!user) {
       throw new NotFoundException('User not found!');
     }

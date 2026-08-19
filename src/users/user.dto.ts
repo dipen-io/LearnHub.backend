@@ -11,8 +11,11 @@ import {
 } from 'class-validator';
 
 export class CreateUserDto {
+  // @IsString()
+  // fullName?: string | "dummy_name";
+  @IsOptional()
   @IsString()
-  fullName: string;
+  fullName: string = "dummy_name";
 
   @IsEmail()
   email: string;
