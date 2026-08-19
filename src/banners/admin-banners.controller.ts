@@ -23,8 +23,15 @@ export class AdminBannerController {
     }
 
     @Get()
-    findAll() {
-        return this.bannersSerrvice.findAll();
+    async findAll() {
+        const banner = await this.bannersSerrvice.findAll();
+
+        return {
+            success: true,
+            statusCode: 201,
+            message: 'Banner fetched successfully',
+            data: banner,
+        }
     }
 
     @Get(':id')
