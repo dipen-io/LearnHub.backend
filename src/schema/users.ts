@@ -11,9 +11,8 @@ import {
   jsonb,
   unique,
 } from 'drizzle-orm/pg-core';
-import { userRole } from './type';
 import { relations } from 'drizzle-orm';
-import { approvedInstructorStatusEnum } from './enum';
+import { approvedInstructorStatusEnum, userRoleEnum } from './enum';
 
 export const users = pgTable(
   'users',
@@ -23,24 +22,25 @@ export const users = pgTable(
     email: varchar('email', { length: 255 }).notNull().unique(),
     phoneNumber: varchar('phone_number', { length: 20 }).unique(),
     password: varchar('password', { length: 255 }).notNull(), // hashed password
-    role: varchar('role', { length: 50 }).default(userRole.User).notNull(), // default role is 'user'
+    // role: varchar('role', { length: 50 }).default(userRole.User).notNull(), // default role is 'user'
+    role: userRoleEnum('role').default('user').notNull(),
     isActive: boolean('isActive').default(true).notNull(),
     profilePicture: varchar('profile_picture', { length: 255 }),
     isVerified: boolean('is_verified').default(false),
     emailVerified: boolean('email_verified').default(false),
     // dateOfBirth: timestamp('date_of_birth'),
     state: text('state'),
-    bio: text('bio'),
+    // bio: text('bio'), removed
     lastLogin: timestamp('last_login'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull().$onUpdate(() => new Date()),
     refreshToken: varchar('refresh_token', { length: 255 }),
     tokenVersion: integer('token_version').default(0),
     resetPasswordToken: varchar('reset_password_token', { length: 255 }),
     resetPasswordExpire: timestamp('reset_password_expire'),
   },
   (table) => ({
-    emailIdx: index('email_idx').on(table.email),
+    // emailIdx: index('email_idx').on(table.email), no need .unique() already make index
     roleIdx: index('role_idx').on(table.role),
   }),
 );
@@ -54,7 +54,7 @@ export const studentProfile = pgTable(
     id: serial('id').primaryKey(),
     userId: integer('user_id') //TODO: need to change it student
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade' }),
     learningGoals: text('learning_goals'),
     preferences: jsonb('preferences').default({}),
   },
@@ -70,12 +70,13 @@ export const instructorProfiles = pgTable(
     id: serial('id').primaryKey(),
     userId: integer('user_id') //TODO: instructor
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade' }),
 
     // channelName: varchar('channel_name', { length: 255 }),
     channelName: varchar('channel_name', { length: 255 }).notNull().unique(),
     channelThumbnail: varchar('channel_thumbnail', { length: 255 }),
     expertise: varchar('expertise', { length: 255 }).array(),
+    bio: text('bio'),
     socialLinks: jsonb('social_links').default({}),
     paymentDetails: jsonb('payment_details'),
     totalEarned: decimal('total_earned', { precision: 10, scale: 2 }).default(
@@ -96,9 +97,20 @@ export const instructorProfiles = pgTable(
   }),
 );
 
+export const userRelations = relations(users, ({ one }) => ({
+  studentProfile: one(studentProfile, {
+    fields: [users.id],
+    references: [studentProfile.userId],
+  }),
+  instructorProfiles: one(instructorProfiles, {
+    fields: [users.id],
+    references: [instructorProfiles.userId],
+  }),
+}))
+
 export const instructorRelations = relations(instructorProfiles, ({ one }) => ({
-    user: one(users, {
-        fields: [instructorProfiles.userId],
-        references: [users.id],
-    }),
+  user: one(users, {
+    fields: [instructorProfiles.userId],
+    references: [users.id],
+  }),
 }));
