@@ -97,6 +97,7 @@ export const instructorProfiles = pgTable(
   ],
 );
 
+// User relations (User -> Profiles)
 export const userRelations = relations(users, ({ one }) => ({
   studentProfile: one(studentProfile, {
     fields: [users.id],
@@ -108,7 +109,15 @@ export const userRelations = relations(users, ({ one }) => ({
   }),
 }))
 
-export const instructorRelations = relations(instructorProfiles, ({ one }) => ({
+// student profile relations(Student -> User)
+export const studentProfileRelations = relations(studentProfile, ({ one }) => ({
+  user: one(users, {
+    fields: [studentProfile.userId],
+    references: [users.id],
+  })
+}))
+
+export const instructorProfileRelations = relations(instructorProfiles, ({ one }) => ({
   user: one(users, {
     fields: [instructorProfiles.userId],
     references: [users.id],
