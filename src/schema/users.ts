@@ -39,10 +39,10 @@ export const users = pgTable(
     resetPasswordToken: varchar('reset_password_token', { length: 255 }),
     resetPasswordExpire: timestamp('reset_password_expire'),
   },
-  (table) => ({
+  (table) => [
     // emailIdx: index('email_idx').on(table.email), no need .unique() already make index
-    roleIdx: index('role_idx').on(table.role),
-  }),
+    index('role_idx').on(table.role),
+  ],
 );
 
 //there will be two user schema more
@@ -58,9 +58,9 @@ export const studentProfile = pgTable(
     learningGoals: text('learning_goals'),
     preferences: jsonb('preferences').default({}),
   },
-  (table) => ({
-    userIdx: unique('student_user_idx').on(table.userId),
-  }),
+  (table) => [
+    unique('student_user_idx').on(table.userId),
+  ],
 );
 
 // Instructor Profiles
@@ -92,9 +92,9 @@ export const instructorProfiles = pgTable(
     approvedBy: integer('approved_by').references(() => users.id),
     rejectCount: integer("reject_count").default(0).notNull(),
   },
-  (table) => ({
-    userIdx: unique('instructor_user_idx').on(table.userId),
-  }),
+  (table) => [
+    unique('instructor_user_idx').on(table.userId),
+  ],
 );
 
 export const userRelations = relations(users, ({ one }) => ({
