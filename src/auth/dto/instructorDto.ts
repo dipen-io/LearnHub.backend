@@ -1,4 +1,23 @@
-import { IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength, ValidateNested } from 'class-validator';
+
+export class SocialLinksDto {
+  @IsOptional()
+  @IsUrl()
+  linkedin?: string;
+
+  @IsOptional()
+  @IsUrl()
+  github?: string;
+
+  @IsOptional()
+  @IsUrl()
+  youtube?: string;
+
+  @IsOptional()
+  @IsUrl()
+  website?: string;
+}
 
 export class InstructorRequestDto {
   @IsString({ each: true })
@@ -21,10 +40,7 @@ export class InstructorRequestDto {
   reason!: string;
 
   @IsOptional()
-  @IsUrl()
-  portfolioUrl?: string;
-
-  @IsOptional()
-  @IsUrl()
-  linkedinUrl?: string;
+  @ValidateNested()
+  @Type(() => SocialLinksDto)
+  socialLinks?: SocialLinksDto;
 }
