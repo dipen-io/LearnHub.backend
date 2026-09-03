@@ -1,24 +1,30 @@
-import { IsArray, IsNotEmpty, IsObject, IsOptional, IsString} from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
 
 export class InstructorRequestDto {
-  @IsArray()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
-  expertise: string[];
+  @MaxLength(200)
+  expertise!: string;
 
-  @IsObject()
-  @IsNotEmpty()
-  socialLinks: Record<string, string>;
+  @IsString()
+  @MaxLength(1000)
+  bio?: string;
 
   @IsString()
   @IsNotEmpty()
-  channelName: string[];
+  @MaxLength(1500)
+  experience!: string;
 
-  @IsObject()
+  @IsString()
+  @MaxLength(1500)
   @IsNotEmpty()
-  paymentDetails: Record<string, any>;
+  reason!: string;
 
   @IsOptional()
-  @IsString()
-  channelThumbnail?: string;
+  @IsUrl()
+  portfolioUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  linkedinUrl?: string;
 }
