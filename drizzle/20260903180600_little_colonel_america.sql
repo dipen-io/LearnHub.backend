@@ -1,5 +1,31 @@
+CREATE TYPE "public"."banner_platform" AS ENUM('all', 'ios', 'android');--> statement-breakpoint
+CREATE TYPE "public"."banner_position" AS ENUM('home_top', 'home_middle', 'explore_header', 'profile_banner', 'my_learning_top');--> statement-breakpoint
+CREATE TYPE "public"."banner_type" AS ENUM('hero_carousel', 'promo_strip', 'announcement', 'course_featured', 'category_pills');--> statement-breakpoint
+CREATE TYPE "public"."target_audience" AS ENUM('all', 'guests', 'logged_in', 'new_users', 'returning');--> statement-breakpoint
 CREATE TYPE "public"."approval_status" AS ENUM('pending', 'approved', 'rejected');--> statement-breakpoint
 CREATE TYPE "public"."course_level" AS ENUM('beginner', 'intermediate', 'advanced', 'all');--> statement-breakpoint
+CREATE TYPE "public"."user_role" AS ENUM('user', 'instructor', 'admin', 'student');--> statement-breakpoint
+CREATE TABLE "banners" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"type" "banner_type" NOT NULL,
+	"position" "banner_position" NOT NULL,
+	"priority" integer DEFAULT 0 NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"platform" "banner_platform" DEFAULT 'all' NOT NULL,
+	"app_version_min" varchar(20),
+	"app_version_max" varchar(20),
+	"target_audience" "target_audience" DEFAULT 'all' NOT NULL,
+	"target_categories" jsonb,
+	"start_at" timestamp with time zone,
+	"end_at" timestamp with time zone,
+	"content" jsonb NOT NULL,
+	"impressions" integer DEFAULT 0 NOT NULL,
+	"clicks" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "cart_items" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"student_id" integer NOT NULL,
@@ -27,31 +53,31 @@ CREATE TABLE "categories" (
 --> statement-breakpoint
 CREATE TABLE "courses" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"instructor_id" integer NOT NULL,
 	"course_title" varchar(255) NOT NULL,
 	"slug" varchar(255) NOT NULL,
+	"description" text,
 	"course_thumbnail" varchar(255) NOT NULL,
 	"promo_video_url" varchar(255),
 	"status" varchar(20) DEFAULT 'upcoming' NOT NULL,
-	"is_active" boolean DEFAULT true NOT NULL,
-	"is_new" boolean DEFAULT true NOT NULL,
-	"is_popular" boolean DEFAULT false NOT NULL,
-	"is_free" boolean DEFAULT false,
-	"is_pinned" boolean DEFAULT false,
-	"priority" integer DEFAULT 0,
 	"level" "course_level" DEFAULT 'all',
 	"language" varchar(50) DEFAULT 'Hindi',
 	"duration" varchar(50),
-	"tags" text[],
-	"price" numeric(10, 2) DEFAULT '0.00',
-	"discount" integer,
-	"description" text,
 	"requirements" text,
 	"what_you_will_learn" text,
+	"is_active" boolean DEFAULT false NOT NULL,
+	"price" numeric(10, 2) DEFAULT '0.00',
+	"discount" integer,
+	"is_free" boolean DEFAULT false,
 	"published_at" timestamp,
 	"enrollment_deadline" timestamp,
+	"is_new" boolean DEFAULT true NOT NULL,
+	"is_popular" boolean DEFAULT false NOT NULL,
+	"is_pinned" boolean DEFAULT false,
+	"priority" integer DEFAULT 0,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"instructor_id" integer NOT NULL,
+	"tags" text[],
 	"category_id" uuid,
 	CONSTRAINT "courses_slug_unique" UNIQUE("slug")
 );
@@ -97,10 +123,11 @@ CREATE TABLE "course_vidoes" (
 CREATE TABLE "instructor_profiles" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"user_id" integer NOT NULL,
-	"channel_name" varchar(255) NOT NULL,
-	"channel_thumbnail" varchar(255),
-	"expertise" varchar(255)[],
-	"social_links" jsonb DEFAULT '{}'::jsonb,
+	"expertise" varchar(255),
+	"bio" text,
+	"reason" text,
+	"experience" text,
+	"social_links" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"payment_details" jsonb,
 	"total_earned" numeric(10, 2) DEFAULT '0.00',
 	"pending_balance" numeric(10, 2) DEFAULT '0.00',
@@ -108,7 +135,6 @@ CREATE TABLE "instructor_profiles" (
 	"approved_at" timestamp,
 	"approved_by" integer,
 	"reject_count" integer DEFAULT 0 NOT NULL,
-	CONSTRAINT "instructor_profiles_channel_name_unique" UNIQUE("channel_name"),
 	CONSTRAINT "instructor_user_idx" UNIQUE("user_id")
 );
 --> statement-breakpoint
@@ -126,13 +152,12 @@ CREATE TABLE "users" (
 	"email" varchar(255) NOT NULL,
 	"phone_number" varchar(20),
 	"password" varchar(255) NOT NULL,
-	"role" varchar(50) DEFAULT 'user' NOT NULL,
-	"isActive" boolean DEFAULT true NOT NULL,
+	"role" "user_role" DEFAULT 'user' NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
 	"profile_picture" varchar(255),
 	"is_verified" boolean DEFAULT false,
 	"email_verified" boolean DEFAULT false,
 	"state" text,
-	"bio" text,
 	"last_login" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
@@ -165,14 +190,13 @@ ALTER TABLE "course_reviews" ADD CONSTRAINT "course_reviews_course_id_courses_id
 ALTER TABLE "course_reviews" ADD CONSTRAINT "course_reviews_student_id_student_profile_id_fk" FOREIGN KEY ("student_id") REFERENCES "public"."student_profile"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "course_video_resources" ADD CONSTRAINT "course_video_resources_video_id_course_vidoes_id_fk" FOREIGN KEY ("video_id") REFERENCES "public"."course_vidoes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "course_vidoes" ADD CONSTRAINT "course_vidoes_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "instructor_profiles" ADD CONSTRAINT "instructor_profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "instructor_profiles" ADD CONSTRAINT "instructor_profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "instructor_profiles" ADD CONSTRAINT "instructor_profiles_approved_by_users_id_fk" FOREIGN KEY ("approved_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "student_profile" ADD CONSTRAINT "student_profile_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "student_profile" ADD CONSTRAINT "student_profile_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "otp" ADD CONSTRAINT "otp_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "category_idx" ON "courses" USING btree ("category_id");--> statement-breakpoint
 CREATE INDEX "instructor_idx" ON "courses" USING btree ("instructor_id");--> statement-breakpoint
 CREATE INDEX "published_idx" ON "courses" USING btree ("published_at");--> statement-breakpoint
 CREATE INDEX "level_idx" ON "courses" USING btree ("level");--> statement-breakpoint
-CREATE INDEX "email_idx" ON "users" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "role_idx" ON "users" USING btree ("role");--> statement-breakpoint
 CREATE INDEX "otp_idx" ON "otp" USING btree ("user_id");

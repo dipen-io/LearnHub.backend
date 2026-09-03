@@ -1,6 +1,6 @@
 {
-  "id": "1f38adb5-d224-4802-918e-347811f3ef76",
-  "prevId": "07d1b2b4-8d02-4e5f-8624-582bc926c3fe",
+  "id": "37973117-21be-4e91-a38d-3a4b249da6d9",
+  "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -940,21 +940,27 @@
           "primaryKey": false,
           "notNull": true
         },
-        "channel_name": {
-          "name": "channel_name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel_thumbnail": {
-          "name": "channel_thumbnail",
+        "expertise": {
+          "name": "expertise",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },
-        "expertise": {
-          "name": "expertise",
-          "type": "varchar(255)[]",
+        "bio": {
+          "name": "bio",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "experience": {
+          "name": "experience",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -962,7 +968,7 @@
           "name": "social_links",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "default": "'{}'::jsonb"
         },
         "payment_details": {
@@ -1025,7 +1031,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "instructor_profiles_approved_by_users_id_fk": {
@@ -1044,13 +1050,6 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "instructor_profiles_channel_name_unique": {
-          "name": "instructor_profiles_channel_name_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "channel_name"
-          ]
-        },
         "instructor_user_idx": {
           "name": "instructor_user_idx",
           "nullsNotDistinct": false,
@@ -1105,7 +1104,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1159,13 +1158,14 @@
         },
         "role": {
           "name": "role",
-          "type": "varchar(50)",
+          "type": "user_role",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
           "default": "'user'"
         },
-        "isActive": {
-          "name": "isActive",
+        "is_active": {
+          "name": "is_active",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -1193,12 +1193,6 @@
         },
         "state": {
           "name": "state",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "bio": {
-          "name": "bio",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -1250,21 +1244,6 @@
         }
       },
       "indexes": {
-        "email_idx": {
-          "name": "email_idx",
-          "columns": [
-            {
-              "expression": "email",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "role_idx": {
           "name": "role_idx",
           "columns": [
@@ -1444,6 +1423,16 @@
         "intermediate",
         "advanced",
         "all"
+      ]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": [
+        "user",
+        "instructor",
+        "admin",
+        "student"
       ]
     }
   },
