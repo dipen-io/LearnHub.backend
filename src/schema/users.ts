@@ -70,10 +70,20 @@ export const instructorProfiles = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
 
-    channelThumbnail: varchar('channel_thumbnail', { length: 255 }),
-    expertise: varchar('expertise', { length: 255 }).array(),
+    expertise: varchar('expertise', { length: 255 }),
     bio: text('bio'),
-    socialLinks: jsonb('social_links').default({}),
+    reason: text('reason'),
+    experience: text('experience'),
+    // socialLinks: jsonb('social_links').default({}),
+    socialLinks: jsonb('social_links')
+      .$type<{
+        linkedin?: string;
+        github?: string;
+        youtube?: string;
+        website?: string;
+      }>()
+      .notNull()
+      .default({}),
     paymentDetails: jsonb('payment_details'),
     totalEarned: decimal('total_earned', { precision: 10, scale: 2 }).default(
       '0.00',
