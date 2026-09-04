@@ -98,12 +98,12 @@ export class CreateCourseDto {
   @IsString()
   isFree?: string;
 
-  @IsOptional()
-  @IsDateString({}, { message: 'Published date must be a valid ISO date string' })
-  publishedAt?: string;
+  // @IsOptional()
+  // @IsDateString({}, { message: 'Published date must be a valid ISO date string' })
+  // publishedAt?: string;
 
-  @IsOptional()
-  @IsDateString({}, { message: 'Enrollment deadline must be a valid ISO date string' })
-  enrollmentDeadline?: string;
+  // @IsOptional()
+  // @IsDateString({}, { message: 'Enrollment deadline must be a valid ISO date string' })
+  // enrollmentDeadline?: string;
 }
 

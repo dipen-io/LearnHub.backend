@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 // import { Course } from "src/schema/type";
 import { courseFilter } from "./interfaces/course.interface";
 import { CreateCourseDto } from "./dto/create-course.dto";
@@ -50,7 +50,6 @@ export class CourseService {
       instructor: {
         instructorId: course.instructor.id,
         fullName: course.instructor.userId,
-        ChannleName: course.instructor.channelName,
         expertise: course.instructor.expertise,
         socialLinks: course.instructor.socialLinks,
       },
@@ -102,7 +101,6 @@ export class CourseService {
 
   //create course
   async create_course(createCourseDto: CreateCourseDto, instructorId: number, file?: Express.Multer.File) {
-
     // Check if the instructorId is valid or not
     const validUserId = await db.query.instructorProfiles.findFirst({
       where: eq(instructorProfiles.id, instructorId),
@@ -114,42 +112,77 @@ export class CourseService {
     // ✅ Generate slug safely
     const { courseTitle } = createCourseDto
     const folderName = 'courseThumbnails';
-    const slug = slugify(courseTitle || " ", { lower: true, strict: true })
+    const slug = slugify(courseTitle || 'untitle-course', { lower: true, strict: true })
     // const upload =  file ? await this.fileService.uploadFile(file) : null;
     const upload = file
       ? await this.fileService.uploadFile(file, { folder: folderName })
       : null;
-    let courseData;
-    if (upload) {
-      courseData = {
-        instructorId,
-        slug,
-        ...createCourseDto,
-        courseThumbnail: upload?.url || upload?.path || null,
-        publishedAt: createCourseDto.publishedAt
-          ? new Date(createCourseDto.publishedAt)
-          : undefined,
-        enrollmentDeadline: createCourseDto.publishedAt
-          ? new Date(createCourseDto.publishedAt)
-          : undefined,
-        isFree: createCourseDto.isFree
-          ? createCourseDto.isFree.toLowerCase() === 'true'
-          : false,
-      };
-    }
 
-    // ✅Save course in transaction
-    const savedData = await db.transaction(async (tx) => {
-      const [createdCourse] = await tx
-        .insert(course)
-        .values(courseData)
-        .returning();
-      return createdCourse;
-    });
-    return {
-      success: true,
-      message: "Course Created Successfully!",
-      data: savedData,
+    const isFree = typeof createCourseDto.isFree === 'string'
+      ? createCourseDto.isFree.toLowerCase() === 'true'
+      : Boolean(createCourseDto.isFree);
+
+    // const courseData = {
+    //   instructorId: instructorId,
+    //   slug,
+    //   ...createCourseDto,
+    //   courseThumbnail: upload?.url || upload?.path || "http://urlofimage",
+    //   // publishedAt: createCourseDto.publishedAt
+    //   //   ? new Date(createCourseDto.publishedAt)
+    //   //   : undefined,
+    //   // enrollmentDeadline: createCourseDto.enrollmentDeadline
+    //   //   ? new Date(createCourseDto.enrollmentDeadline)
+    //   //   : undefined,
+    //   isFree
+    // };
+    const courseData = {
+      instructorId,
+      courseTitle: createCourseDto.courseTitle,
+      slug,
+
+      shortDescription: createCourseDto.shortDescription,
+      description: createCourseDto.description,
+
+      categoryId: createCourseDto.categoryId,
+
+      level: createCourseDto.level,
+      language: createCourseDto.language,
+
+      tags: createCourseDto.tags,
+
+      price: createCourseDto.price,
+
+      isFree,
+
+      courseThumbnail:
+        upload?.url ||
+        upload?.path ||
+        "http://urlofimage",
+    };
+
+    try {
+      const savedData = await db.transaction(async (tx) => {
+        const [createdCourse] = await tx.insert(course).values(courseData).returning();
+        return createdCourse;
+      })
+      return {
+        success: true,
+        message: "Course Created Successfully!",
+        data: savedData,
+      }
+    } catch (error: any) {
+      if (upload?.path) {
+        await this.fileService.deleteFile(upload.path).catch(() => {
+          // don't let cleanup failure mask the original error 
+        });
+      }
+
+      if (error?.code === "23505") {
+        throw new ConflictException(
+          "A course with this title already exists"
+        );
+      }
+      throw error;
     }
   }
 

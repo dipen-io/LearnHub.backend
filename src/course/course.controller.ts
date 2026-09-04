@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Controller, Get, Param, Post, Delete, Put, Body, UseGuards,Request, UseInterceptors, UploadedFile, Query } from "@nestjs/common";
+import { Controller, Get, Param, Post, Delete, Put, Body, UseGuards, Request, UseInterceptors, UploadedFile, Query } from "@nestjs/common";
 import { CourseService } from "./course.services";
 import { CreateCourseDto } from "./dto/create-course.dto";
 import { getFileInterceptor } from "src/file/file.interceptor";
@@ -13,11 +13,11 @@ import { courseFilter } from "./interfaces/course.interface";
 import { FileService } from "src/file/file.service";
 
 @Controller('course')
-export class Course{
+export class Course {
     constructor(
         private readonly courseService: CourseService,
         private readonly fileService: FileService
-    ){}
+    ) { }
     // GET all Course
     @Get()
     async findAll() {
@@ -26,13 +26,13 @@ export class Course{
 
     // GET single course
     @Get(':id')
-    async getSingleCourse (@Param('id') id: number){
+    async getSingleCourse(@Param('id') id: number) {
         return `sigle course with id${id}`;
     }
 
     // GET All Course By Instructor
     @Get('instructor/:InstructorId')
-    async getCourseByInstructor (@Param('InstructorId') id: number){
+    async getCourseByInstructor(@Param('InstructorId') id: number) {
         console.log("InstructorID==>>>>>>>>", id)
         return await this.courseService.get_course_by_instructor(id);
     }
@@ -47,28 +47,30 @@ export class Course{
         @Request() req: RequestWithUser,
         @Query("instructorId") instructorId: string,
         @Body() createCourse: CreateCourseDto) {
+        console.log("IS THIS ROUTE WORKING..............................")
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         // const userId: number = (req.user as any).userId
         const userId = (req as any).user.userId;
         // const upload = file ? this.fileService.uploadFile(file) : null;
         const parsedInstructorId = parseInt(instructorId, 10);
-        return this.courseService.create_course(createCourse, parsedInstructorId, file)
+        console.log("COUSE CREATION RUNNING...", userId, parsedInstructorId);
+        return this.courseService.create_course(createCourse, userId, file)
     }
 
     //DELETE post here
     @Admin()
     @Delete('del/:id')
-    deleteCourse( @Param('id') id: string, @Request() req: RequestWithUser) {
+    deleteCourse(@Param('id') id: string, @Request() req: RequestWithUser) {
         return this.courseService.delete_course(id)
     }
 
     @Put('update')
-    updateCourse(){
+    updateCourse() {
         return "UPDATE COURSE HERE !"
     }
 
     @Get('search')
-    searchCourse(){
+    searchCourse() {
         let filter: courseFilter
         return this.courseService.searchCourses("courses", filter);
     }
