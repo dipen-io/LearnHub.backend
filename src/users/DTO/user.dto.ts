@@ -12,13 +12,13 @@ import {
 
 export class CreateUserDto {
   @IsString()
-  fullName: string;
+  fullName?: string;
 
   @IsEmail()
-  email: string;
+  email?: string;
 
   @IsString()
-  password: string;
+  password?: string;
 
   @IsOptional()
   @IsString()
@@ -30,19 +30,19 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  phoneNumber: string;
+  phoneNumber?: string;
 
   @IsOptional()
   @IsString()
-  profilePicture: string;
+  profilePicture?: string;
 
   @IsOptional()
   @IsDateString()
-  dateOfBirth: string;
+  dateOfBirth?: string;
 
   @IsOptional()
   @IsString()
-  state: string;
+  state?: string;
 }
 
 @ValidatorConstraint({ name: 'emailOrPhoneRequired', async: false })
@@ -67,10 +67,10 @@ export class LoginUserDto {
   phoneNumber?: string;
 
   @Validate(EmailOrPhoneRequired)
-  dummyField: string; // Just to trigger the custom validator
+  dummyField?: string; // Just to trigger the custom validator
 
   @IsString({ message: 'Password must be a string' })
-  password: string;
+  password!: string;
 }
 
 export class updatePasswordDto {
@@ -79,5 +79,5 @@ export class updatePasswordDto {
   newPassword?: string;
 
   @IsString({ message: 'Password must be a string' })
-  password: string;
+  password!: string;
 }
