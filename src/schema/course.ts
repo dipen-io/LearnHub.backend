@@ -21,7 +21,8 @@ export const course = pgTable('courses', {
 
   // --- Course Info ---
   courseTitle: varchar('course_title', { length: 255 }).notNull(),
-  slug: varchar('slug', { length: 255 }).notNull().unique(), // auto-generated from title
+  slug: varchar('slug', { length: 255 }).notNull().unique(), // auto-generated from title,
+  shortDescription: text('short_description'),
   description: text('description'),
   courseThumbnail: varchar('course_thumbnail', { length: 255 }).notNull(),
   promoVideoUrl: varchar('promo_video_url', { length: 255 }),
@@ -60,30 +61,29 @@ export const course = pgTable('courses', {
   // foregin key to the user who created/instructor the Course
   instructorId: integer('instructor_id')
     .notNull()
-    .references(() => instructorProfiles.id, {onDelete: 'cascade'}),
+    .references(() => instructorProfiles.id, { onDelete: 'cascade' }),
 
   // Category & Tags
   tags: text('tags').array(), //TODO: updated to array
   categoryId: uuid('category_id').references(() => categories.id, {
-      onDelete: 'set null', // Course stays, but category is removed
+    onDelete: 'set null', // Course stays, but category is removed
   }),
- },
+},
 
-// This is function where define indexes
-// indexed on the category_id column
+  // This is function where define indexes
+  // indexed on the category_id column
 
-(table) => ({
-    categoryIndex: index('category_idx').on(table.categoryId),
+  (table) => [
+    index('category_idx').on(table.categoryId),
     // Index on the instructorId column
-    instructorIndex: index('instructor_idx').on(table.instructorId),
+    index('instructor_idx').on(table.instructorId),
 
     // Index on the isPublished column
-    publishedIndex: index('published_idx').on(table.publishedAt),
+    index('published_idx').on(table.publishedAt),
 
     // Index on the level column
-    levelIndex: index('level_idx').on(table.level),
-
- }),
+    index('level_idx').on(table.level),
+  ],
 );
 
 export const courseReviews = pgTable(
@@ -96,29 +96,30 @@ export const courseReviews = pgTable(
     rating: real('rating').notNull(), // optional: .notNull()
     comment: text('comment'),
 
-     // Optional: for caching review metrics (useful for display/performance)
+    // Optional: for caching review metrics (useful for display/performance)
     averageRating: real('average_rating').default(0).notNull(),
     reviewCount: integer('review_count').default(0).notNull(),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
 
   },
-  (reviews) => ({
-    userCourseUnique: unique().on(reviews.studentId, reviews.courseId),
-  })
+  (reviews) => [
+    // userCourseUnique: 
+    unique().on(reviews.studentId, reviews.courseId),
+  ]
 );
 
 export const courseVideos = pgTable('course_vidoes', {
-    id: uuid('id').defaultRandom().primaryKey(),
-    courseId: uuid('course_id').notNull().references(() => course.id),
-    title: varchar('title', {length: 255}).notNull(),
-    description: text('description'),
-    videoUrl: text('video_url').notNull(),
+  id: uuid('id').defaultRandom().primaryKey(),
+  courseId: uuid('course_id').notNull().references(() => course.id),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  videoUrl: text('video_url').notNull(),
 
-    duration: integer('duration'),// in second
-    order: integer('order'), // position in course
+  duration: integer('duration'),// in second
+  order: integer('order'), // position in course
 
-    createdAt: timestamp('created_at').defaultNow().notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull()
 })
 
 export const courseVideoResources = pgTable('course_video_resources', {
@@ -134,18 +135,18 @@ export const courseVideoResources = pgTable('course_video_resources', {
 export const courseEnrollment = pgTable('course_enrollments', {
   id: uuid('id').defaultRandom().primaryKey(),
   courseId: uuid('course_id')
-  .notNull()
-  .references(() => course.id),
+    .notNull()
+    .references(() => course.id),
   studentId: integer('student_id').notNull().references(() => studentProfile.id)
 })
 
 //RELATION
-export const courseRelations = relations(course, ({one}) => ({
-    instructor: one(instructorProfiles, {
-        fields: [course.instructorId],
-        references: [instructorProfiles.id],
-    }),
+export const courseRelations = relations(course, ({ one }) => ({
+  instructor: one(instructorProfiles, {
+    fields: [course.instructorId],
+    references: [instructorProfiles.id],
   }),
+}),
 )
 
 export const instructorProfilesRelations = relations(instructorProfiles, ({ one }) => ({
@@ -155,6 +156,6 @@ export const instructorProfilesRelations = relations(instructorProfiles, ({ one 
   }),
 }));
 
-export const instructorRelationToCourse = relations(instructorProfiles, ({many}) => ({
-    courses: many(course)
+export const instructorRelationToCourse = relations(instructorProfiles, ({ many }) => ({
+  courses: many(course)
 }));

@@ -53,9 +53,9 @@ export class CreateCourseDto {
   @IsString()
   language?: string;
 
-  @IsOptional()
-  @IsString()
-  duration?: string;
+  // @IsOptional()
+  // @IsString()
+  // duration?: string;
 
   @IsOptional()
   @IsArray()
@@ -86,6 +86,10 @@ export class CreateCourseDto {
   @IsOptional()
   @IsString()
   promoVideoUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  shortDescription?: string;
 
   @IsOptional()
   categoryId?: string;
