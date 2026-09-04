@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Request, Delete, Query } from "@nestjs/common";
+import { Controller, Get, Param, Patch, Request, Delete, Query, Body } from "@nestjs/common";
 import { AdminService } from "./admin.service";
 import { Admin } from "src/common/decorator/role.protected.decorator";
 import * as request_interface from 'src/common/interface/request_interface';
@@ -18,11 +18,11 @@ export class AdminController {
     @Admin()
     @Patch('approve-instructor/:instructorId')
     async approveInstructor(
-        @Query() query: ApproavedInstructorStatusQuery,
+        @Body() body: ApproavedInstructorStatusQuery,
         @Param('instructorId') instructorId: string,
         @Request() req: request_interface.RequestWithUser) {
         const adminId = req.user.userId;
-        const { status } = query;
+        const { status } = body;
         return await this.adminService.approveInstructorRequest(Number(instructorId), adminId, status);
     }
 
@@ -32,8 +32,8 @@ export class AdminController {
         @Query() query: GetInstructorQueryDto,
         @Request() req: request_interface.RequestWithUser) {
         const adminId = req.user.userId;
-        const {search, limit, page} = query;
-        return await this.adminService.getApprovedInstructor(adminId, search, page, limit );
+        const { search, limit, page } = query;
+        return await this.adminService.getApprovedInstructor(adminId, search, page, limit);
     }
 
     // Make user Inactive/Active

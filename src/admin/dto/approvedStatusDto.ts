@@ -10,5 +10,5 @@ export class ApproavedInstructorStatusQuery {
   @IsEnum(InstructorApprovalStatus, {
     message: "Status must be either 'accept' or 'reject'",
   })
-  status: InstructorApprovalStatus;
+  status!: InstructorApprovalStatus;
 }
