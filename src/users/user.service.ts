@@ -333,4 +333,20 @@ export class UserService {
       message: 'new password set successfully',
     };
   }
+
+  async checkIstructorPeding(userId: number) {
+    const validUser = await db.query.instructorProfiles.findFirst({
+      where: and(
+        eq(instructorProfiles.userId, userId),
+        eq(instructorProfiles.approvalStatus, "pending")
+      ),
+    });
+
+    if (!validUser) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    return validUser;
+
+  }
 }

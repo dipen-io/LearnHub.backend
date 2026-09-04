@@ -42,4 +42,9 @@ export class UserController {
   async getUserById(@Param('id') id: number) {
     return this.userService.findOne(id);
   }
+
+  @Get('/check-instructor/:id')
+  async checkInstructorStatus(@Param('id') id: number) {
+    return await this.userService.checkIstructorPeding(id);
+  }
 }
