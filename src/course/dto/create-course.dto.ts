@@ -30,7 +30,7 @@ export enum CourseLevel {
 export class CreateCourseDto {
   @IsNotEmpty({ message: 'Course Title is required' })
   @IsString()
-  courseTitle: string;
+  courseTitle!: string;
 
   // @IsOptional()
   // @IsString({ message: 'Slug must be a string' })
@@ -38,7 +38,7 @@ export class CreateCourseDto {
 
   @IsOptional()
   @IsString()
-  courseThumbnail: string;
+  courseThumbnail!: string;
 
   // @IsOptional()
   // @IsEnum(CourseStatus, { message: 'Invalid course status' })
@@ -47,7 +47,7 @@ export class CreateCourseDto {
 
   @IsOptional()
   @IsEnum(CourseLevel, { message: 'Level must be beginner, intermediate, or advanced' })
-  level: CourseLevel;
+  level!: CourseLevel;
 
   @IsOptional()
   @IsString()
@@ -75,20 +75,20 @@ export class CreateCourseDto {
   @MaxLength(1000, { message: 'Description is too long' })
   description?: string;
 
-  @IsOptional()
-  @IsString()
-  requirements?: string;
+  // @IsOptional()
+  // @IsString()
+  // requirements?: string;
 
-  @IsOptional()
-  @IsString()
-  whatYouWillLearn?: string;
+  // @IsOptional()
+  // @IsString()
+  // whatYouWillLearn?: string;
 
   @IsOptional()
   @IsString()
   promoVideoUrl?: string;
 
   @IsOptional()
-  categoryId?: string | number;
+  categoryId?: string;
 
   @IsOptional()
   @IsString()
