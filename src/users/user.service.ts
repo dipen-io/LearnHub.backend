@@ -320,7 +320,7 @@ export class UserService {
       throw new BadRequestException("Current password is incorrect");
     }
     //hash the password
-    const hashPassworded = await this.hashPassword(updatePasswordDto.newPassword)
+    const hashPassworded = await this.hashPassword(updatePasswordDto.newPassword!)
     //update the password
     await db.update(users)
       .set({ password: hashPassworded })

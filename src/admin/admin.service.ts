@@ -120,14 +120,15 @@ export class AdminService {
       conditions.push(eq(instructorProfiles.approvalStatus, "approved"));
 
       if (search) {
-        conditions.push(
-          or(
-            ilike(users.fullName, `%${search}%`),
-            ilike(users.email, `%${search}%`),
-            ilike(users.phoneNumber, `%${search}%`),
-            ilike(instructorProfiles.channelName, `%${search}%`),
-          ),
+        const searchConditions = or(
+          ilike(users.fullName, `%${search}%`),
+          ilike(users.email, `%${search}%`),
+          ilike(users.phoneNumber, `%${search}%`),
         );
+
+        if (searchConditions) {
+          conditions.push(searchConditions);
+        }
       }
 
       const whereClause = and(...conditions);
@@ -138,7 +139,7 @@ export class AdminService {
         fullName: users.fullName,
         email: users.email,
         phoneNumber: users.phoneNumber,
-        channelName: instructorProfiles.channelName,
+        // channelName: instructorProfiles.channelName,
         totalEarned: instructorProfiles.totalEarned,
         createdAt: users.createdAt,
         isActive: users.isActive
