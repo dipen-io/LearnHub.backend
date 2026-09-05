@@ -3,10 +3,12 @@ import { ConflictException, Injectable, NotFoundException } from "@nestjs/common
 import { courseFilter } from "./interfaces/course.interface";
 import { CreateCourseDto } from "./dto/create-course.dto";
 import { db } from "src/config/db";
-import { course, instructorProfiles } from "src/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { course, instructorProfiles, users } from "src/schema";
+import { eq, and, sql, asc, desc, gt, lt, ilike, gte, or, lte, SQL, } from "drizzle-orm";
 import slugify from "slugify";
 import { FileService } from "src/file/file.service";
+import { CursorPayload } from "./dto/type";
+import { AnyPgColumn } from "drizzle-orm/pg-core";
 
 @Injectable()
 export class CourseService {
@@ -15,52 +17,204 @@ export class CourseService {
     private readonly fileService: FileService
   ) { }
   // Get all course
-  async getAllCourse() {
-    const course = await db.query.course.findMany({
-      with: {
-        instructor: {
-          with: {
-            user: true,
-          },
-        },
-      }
-    })
+  async getAllCourse(
+    limits: string,
+    cursors: string,
+    sort: string,
+    search: string,
+    category: string,
+    min_price: string,
+    max_price: string
+  ) {
+    const DEFAULT_LIMIT = 10;
+    const MAX_LIMIT = 20;
 
-    if (!course || course.length === 0) {
+    let limit = parseInt(limits, 10);
+    if (isNaN(limit) || limit <= 0) limit = DEFAULT_LIMIT;
+    if (limit >= MAX_LIMIT) limit = MAX_LIMIT;
+
+    let cursor: CursorPayload | null = null;
+    if (cursors) {
+      try {
+        cursor = this.decodeCursor(cursors);
+      } catch (error) {
+        throw new ConflictException("The provider cursor is invalid")
+      }
+    }
+
+    // Whitelist sortable fiedls
+    const SORTABLE_COLUMNS: Record<string, AnyPgColumn> = {
+      created_at: course.createdAt,
+      price: course.price,
+      name: course.courseTitle,
+    };
+
+    let sortKey: keyof typeof SORTABLE_COLUMNS = 'created_at';
+    let sortDir: 'ASC' | 'DESC' = 'DESC';
+
+    if (sort) {
+      const desc_ = sort.startsWith('-');
+      const field = (desc_ ? sort.slice(1) : sort) as keyof typeof SORTABLE_COLUMNS;
+      if (SORTABLE_COLUMNS[field]) {
+        sortKey = field;
+        sortDir = desc_ ? 'DESC' : "ASC";
+      }
+    }
+
+    const sortColoumn: AnyPgColumn = SORTABLE_COLUMNS[sortKey];
+
+    // BUILD WHERE CONDITION
+    const conditions = [];
+
+    if (search) {
+      // use full-text search or ILIKE
+      conditions.push(ilike(course.courseTitle, `%${search}%`));
+    }
+
+    if (category) {
+      conditions.push(eq(course.categoryId, category));//condusion here 
+    }
+
+    if (min_price) {
+      conditions.push(gte(course.price, (min_price)));
+    }
+
+    if (max_price) {
+      conditions.push(lte(course.price, (max_price)));
+    }
+
+    if (cursor) {
+      const cmp: (column: AnyPgColumn, value: unknown) => SQL = sortDir === 'DESC' ? lt : gt;
+      conditions.push(
+        or(cmp(sortColoumn, cursor.sortValue)),
+        and(eq(sortColoumn, cursor.sortValue), cmp(course.id, cursor.id)),
+      );
+    }
+
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    const orderFn = sortDir === 'DESC' ? desc : asc;
+
+    // single optimize query
+    // filter + sort + cursor + limit + join
+    const rows = await db
+      .select({
+        id: course.id,
+        courseTitle: course.courseTitle,
+        courseThumbnail: course.courseThumbnail,
+        isActive: course.isActive,
+        tags: course.tags,
+        price: course.price,
+        discount: course.discount,
+        description: course.description,
+        category: course.categoryId,
+        createdAt: course.createdAt,
+        instructorId: course.instructorId,
+        instructorExpertice: instructorProfiles.expertise,
+        instructorSocial: instructorProfiles.socialLinks,
+        instructorFullName: users.fullName,
+      })
+      .from(course)
+      .innerJoin(instructorProfiles, eq(course.instructorId, instructorProfiles.id))
+      .innerJoin(users, eq(instructorProfiles.userId, users.id))
+      .where(whereClause)
+      .orderBy(orderFn(sortColoumn), orderFn(course.id))
+      .limit(limit + 1);
+
+
+
+    const has_more = rows.length > limit;
+    const trimmed = has_more ? rows.slice(0, limit) : rows;
+
+
+    const next_cursor =
+      trimmed.length > 0
+        ? this.encodeCursor({
+          id: trimmed[trimmed.length - 1].id,
+          sortValue: trimmed[trimmed.length - 1][
+            sortKey === 'created_at' ? 'createdAt' : sortKey
+          ],
+        })
+        : null;
+
+    if (trimmed.length === 0) {
       return {
         success: true,
-        message: "📚 No courses are available at the moment. Check back soon!",
+        message: 'No courses are available at the moment . Check back soon!',
         data: [],
+        pagination: { next_cursor: null, has_more: false }
       };
     }
+
+
+    // const courses = await db.query.course.findMany({
+    //   with: {
+    //     instructor: {
+    //       with: {
+    //         user: true,
+    //       },
+    //     },
+    //   }
+    // })
+
+    // if (!courses || courses.length === 0) {
+    //   return {
+    //     success: true,
+    //     message: "📚 No courses are available at the moment. Check back soon!",
+    //     data: [],
+    //   };
+    // }
 
     //TODO:
     // while if there is course then
     // i need to check if that course is already in cart or wishlist or not
 
-    const cleanedCourses = course.map((course) => ({
-      id: course.id,
-      courseTitle: course.courseTitle,
-      courseThumbnail: course.courseThumbnail,
-      isActive: course.isActive,
-      tags: course.tags,
-      price: course.price,
-      discount: course.discount,
-      description: course.description,
+    // const cleanedCourses = courses.map((course) => ({
+    //   id: course.id,
+    //   courseTitle: course.courseTitle,
+    //   courseThumbnail: course.courseThumbnail,
+    //   isActive: course.isActive,
+    //   tags: course.tags,
+    //   price: course.price,
+    //   discount: course.discount,
+    //   description: course.description,
+    //   instructor: {
+    //     instructorId: course.instructor.id,
+    //     fullName: course.instructor.user.fullName,
+    //     expertise: course.instructor.expertise,
+    //     socialLinks: course.instructor.socialLinks,
+    //   },
+    const cleanedCourses = trimmed.map((c) => ({
+      id: c.id,
+      courseTitle: c.courseTitle,
+      courseThumbnail: c.courseThumbnail,
+      isActive: c.isActive,
+      tags: c.tags,
+      price: c.price,
+      discount: c.discount,
+      description: c.description,
       instructor: {
-        instructorId: course.instructor.id,
-        fullName: course.instructor.user.fullName,
-        expertise: course.instructor.expertise,
-        socialLinks: course.instructor.socialLinks,
-      },
+        instructorId: c.instructorId,
+        fullName: c.instructorFullName,
+        expertise: c.instructorExpertice,
+        socialLinks: c.instructorSocial
+      }
     }));
 
     return {
       success: true,
-      message: "Fetched All Course",
+      message: 'Fetched All Course',
       data: cleanedCourses,
-      totalCourse: cleanedCourses.length
-    }
+      pagination: { next_cursor: has_more ? next_cursor : null, has_more },
+      applied: {
+        search: search || null,
+        sort: sort || '-created_at',
+        filters: {
+          category: category || null,
+          min_price: min_price || null,
+          max_price: max_price || null,
+        },
+      },
+    };
   }
 
   // get course by instructor
@@ -240,4 +394,20 @@ export class CourseService {
       data: searchResult,
     };
   }
+
+
+  // ENCODE CURSOR 
+  encodeCursor(payload: CursorPayload) {
+    return Buffer.from(JSON.stringify(payload)).toString('base64');
+  }
+
+  // DECODE CURSOR
+  decodeCursor(cursorStr: string): CursorPayload {
+    const decoded = Buffer.from(cursorStr, 'base64').toString('utf-8');
+    const parsed = JSON.parse(decoded);
+    if (parsed.id === undefined || parsed.sortValue === undefined) throw new Error('Malformed cursor');
+    return parsed;
+  }
+
+
 }
