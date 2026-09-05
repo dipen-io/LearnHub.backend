@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { approvedInstructorStatusEnum, userRoleEnum } from './enum';
+import { course } from './course';
 
 export const users = pgTable(
   'users',
@@ -123,9 +124,10 @@ export const studentProfileRelations = relations(studentProfile, ({ one }) => ({
 }))
 
 // instructor profile relation (Instructor -> User)
-export const instructorProfileRelations = relations(instructorProfiles, ({ one }) => ({
+export const instructorProfileRelations = relations(instructorProfiles, ({ one, many }) => ({
   user: one(users, {
     fields: [instructorProfiles.userId],
     references: [users.id],
   }),
+  courses: many(course),
 }));
