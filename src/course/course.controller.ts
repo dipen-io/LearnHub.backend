@@ -54,7 +54,7 @@ export class Course {
         // const upload = file ? this.fileService.uploadFile(file) : null;
         const parsedInstructorId = parseInt(instructorId, 10);
         console.log("COUSE CREATION RUNNING...", userId, parsedInstructorId);
-        return this.courseService.create_course(createCourse, userId, file)
+        return this.courseService.create_course(createCourse, parsedInstructorId, file)
     }
 
     //DELETE post here
