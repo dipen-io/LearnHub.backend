@@ -149,13 +149,13 @@ export const courseRelations = relations(course, ({ one }) => ({
 }),
 )
 
-export const instructorProfilesRelations = relations(instructorProfiles, ({ one }) => ({
-  user: one(users, {
-    fields: [instructorProfiles.userId],
-    references: [users.id],
-  }),
-}));
+// export const instructorProfilesRelations = relations(instructorProfiles, ({ one }) => ({
+//   user: one(users, {
+//     fields: [instructorProfiles.userId],
+//     references: [users.id],
+//   }),
+// }));
 
-export const instructorRelationToCourse = relations(instructorProfiles, ({ many }) => ({
-  courses: many(course)
-}));
+// export const instructorRelationToCourse = relations(instructorProfiles, ({ many }) => ({
+//   courses: many(course)
+// }));
