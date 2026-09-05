@@ -53,7 +53,6 @@ export class Course {
         const userId = (req as any).user.userId;
         // const upload = file ? this.fileService.uploadFile(file) : null;
         const parsedInstructorId = parseInt(instructorId, 10);
-        console.log("COUSE CREATION RUNNING...", userId, parsedInstructorId);
         return this.courseService.create_course(createCourse, parsedInstructorId, file)
     }
 

@@ -49,7 +49,7 @@ export class CourseService {
       description: course.description,
       instructor: {
         instructorId: course.instructor.id,
-        fullName: course.instructor.userId,
+        fullName: course.instructor.user.fullName,
         expertise: course.instructor.expertise,
         socialLinks: course.instructor.socialLinks,
       },
