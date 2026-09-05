@@ -20,8 +20,18 @@ export class Course {
     ) { }
     // GET all Course
     @Get()
-    async findAll() {
-        return await this.courseService.getAllCourse();
+    async findAll(
+        @Query('limit') limit: string,
+        @Query('cursor') cursor: string,
+        @Query('sort') sort: string,
+        @Query('search') search: string,
+        @Query('min_price') min_price: string,
+        @Query('max_price') max_price: string,
+        @Query('category') category: string,
+    ) {
+        return await this.courseService.getAllCourse(
+            limit, cursor, sort, search, category, min_price, max_price
+        );
     }
 
     // GET single course
