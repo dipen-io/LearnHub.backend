@@ -3,7 +3,7 @@ import { ConflictException, Injectable, NotFoundException } from "@nestjs/common
 import { courseFilter } from "./interfaces/course.interface";
 import { CreateCourseDto } from "./dto/create-course.dto";
 import { db } from "src/config/db";
-import { course, instructorProfiles, users } from "src/schema";
+import { categories, course, instructorProfiles, users } from "src/schema";
 import { eq, and, sql, asc, desc, gt, lt, ilike, gte, or, lte, SQL, } from "drizzle-orm";
 import slugify from "slugify";
 import { FileService } from "src/file/file.service";
@@ -72,7 +72,7 @@ export class CourseService {
     }
 
     if (category) {
-      conditions.push(eq(course.categoryId, category));//condusion here 
+      conditions.push(eq(categories.slug, category));
     }
 
     if (min_price) {
@@ -106,21 +106,23 @@ export class CourseService {
         price: course.price,
         discount: course.discount,
         description: course.description,
-        category: course.categoryId,
+        categoryId: categories.id,
+        categoryName: categories.name,
+        categorySlug: categories.slug,
         createdAt: course.createdAt,
+
         instructorId: course.instructorId,
         instructorExpertice: instructorProfiles.expertise,
         instructorSocial: instructorProfiles.socialLinks,
         instructorFullName: users.fullName,
       })
       .from(course)
+      .innerJoin(categories, eq(course.categoryId, categories.id))
       .innerJoin(instructorProfiles, eq(course.instructorId, instructorProfiles.id))
       .innerJoin(users, eq(instructorProfiles.userId, users.id))
       .where(whereClause)
       .orderBy(orderFn(sortColoumn), orderFn(course.id))
       .limit(limit + 1);
-
-
 
     const has_more = rows.length > limit;
     const trimmed = has_more ? rows.slice(0, limit) : rows;
@@ -145,44 +147,10 @@ export class CourseService {
       };
     }
 
-
-    // const courses = await db.query.course.findMany({
-    //   with: {
-    //     instructor: {
-    //       with: {
-    //         user: true,
-    //       },
-    //     },
-    //   }
-    // })
-
-    // if (!courses || courses.length === 0) {
-    //   return {
-    //     success: true,
-    //     message: "📚 No courses are available at the moment. Check back soon!",
-    //     data: [],
-    //   };
-    // }
-
     //TODO:
     // while if there is course then
     // i need to check if that course is already in cart or wishlist or not
 
-    // const cleanedCourses = courses.map((course) => ({
-    //   id: course.id,
-    //   courseTitle: course.courseTitle,
-    //   courseThumbnail: course.courseThumbnail,
-    //   isActive: course.isActive,
-    //   tags: course.tags,
-    //   price: course.price,
-    //   discount: course.discount,
-    //   description: course.description,
-    //   instructor: {
-    //     instructorId: course.instructor.id,
-    //     fullName: course.instructor.user.fullName,
-    //     expertise: course.instructor.expertise,
-    //     socialLinks: course.instructor.socialLinks,
-    //   },
     const cleanedCourses = trimmed.map((c) => ({
       id: c.id,
       courseTitle: c.courseTitle,
@@ -192,6 +160,11 @@ export class CourseService {
       price: c.price,
       discount: c.discount,
       description: c.description,
+      category: {
+        id: c.categoryId,
+        name: c.categoryName,
+        slug: c.categorySlug,
+      },
       instructor: {
         instructorId: c.instructorId,
         fullName: c.instructorFullName,

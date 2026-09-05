@@ -19,6 +19,7 @@ export class Course {
         private readonly fileService: FileService
     ) { }
     // GET all Course
+    // GET /course?limit=20&cursor=eyJpZ...&sort=-price&search=react&category=web&min_price=10&max_price=100
     @Get()
     async findAll(
         @Query('limit') limit: string,
