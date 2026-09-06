@@ -190,6 +190,16 @@ export class CourseService {
     };
   }
 
+
+  async get_single_course(courseId: string) {
+
+    const singleCourse = await db.query.course.findFirst({
+      where: eq(course.id, courseId)
+    })
+
+    return singleCourse;
+  }
+
   // get course by instructor
   async get_course_by_instructor(instructorId: number) {
 

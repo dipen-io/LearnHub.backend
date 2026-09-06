@@ -37,8 +37,8 @@ export class Course {
 
     // GET single course
     @Get(':id')
-    async getSingleCourse(@Param('id') id: number) {
-        return `sigle course with id${id}`;
+    async getSingleCourse(@Param('id') id: string) {
+        return await this.courseService.get_single_course(id);
     }
 
     // GET All Course By Instructor
