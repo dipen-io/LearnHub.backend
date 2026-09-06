@@ -1,6 +1,6 @@
 // src/users/users.controller.ts
 
-import { UseGuards,Request, Query, Controller, Get, UseFilters } from '@nestjs/common';
+import { UseGuards, Request, Query, Controller, Get, UseFilters } from '@nestjs/common';
 import { HttpExceptionFilter } from 'src/common/filters/http-exception.filter';
 import { UserService } from './user.service';
 import { Param } from '@nestjs/common';
@@ -11,13 +11,13 @@ import { GetUserQueryDto } from './DTO/userQeuryDto';
 //appy on whole controller
 @UseFilters(HttpExceptionFilter)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Get()
   async getAllUsers(
-        @Query() query: GetUserQueryDto,
-    ) {
-    const {search, limit, page, type, status} = query
+    @Query() query: GetUserQueryDto,
+  ) {
+    const { search, limit, page, type, status } = query
     return this.userService.findAll(search, limit, page, type, status);
   }
 
@@ -41,5 +41,10 @@ export class UserController {
   @Get(':id')
   async getUserById(@Param('id') id: number) {
     return this.userService.findOne(id);
+  }
+
+  @Get('/check-instructor/:id')
+  async checkInstructorStatus(@Param('id') id: number) {
+    return await this.userService.checkIstructorPeding(id);
   }
 }

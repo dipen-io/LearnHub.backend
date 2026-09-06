@@ -12,3 +12,5 @@ export const courseLevelEnum = pgEnum('course_level', [
   'advanced',
   'all',
 ])
+
+export const userRoleEnum = pgEnum('user_role', ['user', 'instructor', 'admin', 'student']);

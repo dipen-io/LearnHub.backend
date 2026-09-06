@@ -37,24 +37,24 @@ export class AuthService {
     if (!token) throw new UnauthorizedException();
 
     try {
-        const payload = await this.jwtService.verifyAsync<JwtPayload>(
-            token,
-            { secret: env.JWT_REFRESH_SECRET }
-        );
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(
+        token,
+        { secret: env.JWT_REFRESH_SECRET }
+      );
 
-        const user = await db.query.users.findFirst({
-            where: eq(users.id, payload.userId)
-         })
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, payload.userId)
+      })
 
-       if (!user || user.tokenVersion !== payload.tokenVersion) {
-           throw new UnauthorizedException('Invalid refresh token');
-       }
+      if (!user || user.tokenVersion !== payload.tokenVersion) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
 
-        // Rorate the tokenVersion(issue new tokenVersion)
-        user.tokenVersion += 1;
-        await db.update(users).set({
-          tokenVersion: user.tokenVersion
-        }).where(eq(users.id, user.id))
+      // Rorate the tokenVersion(issue new tokenVersion)
+      user.tokenVersion += 1;
+      await db.update(users).set({
+        tokenVersion: user.tokenVersion
+      }).where(eq(users.id, user.id))
 
       const newTokens = this.generateTokens({
         userId: payload.userId,
@@ -133,7 +133,7 @@ export class AuthService {
 
   // VERIFICATION OTP
   // THEN MAKE STUDENT_TYPE
-  async otpVerify(otpVerify: OtpVerify, userId: number): Promise<any>{
+  async otpVerify(otpVerify: OtpVerify, userId: number): Promise<any> {
 
     const existingOtp = await db.query.otp.findFirst({
       where: eq(otp.userId, userId)
@@ -153,15 +153,15 @@ export class AuthService {
       throw new Error('OTP has expired!');
     }
     // 5. mark otp as used
-    await db.update(otp).set({usedAt: now}).where(eq(otp.userId, userId));
+    await db.update(otp).set({ usedAt: now }).where(eq(otp.userId, userId));
 
     // update the users
     await db.update(users)
-    .set({
-      emailVerified: true,
-      isVerified: true,
-      role: userRole.Student
-    }).where(eq(users.id, userId));
+      .set({
+        emailVerified: true,
+        isVerified: true,
+        role: userRole.Student
+      }).where(eq(users.id, userId));
 
     //create an student profile
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -172,11 +172,11 @@ export class AuthService {
     });
 
     return {
-    success: true,
-    message: 'Email verified and student profile created!',
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    data: newStudent,
-  };
+      success: true,
+      message: 'Email verified and student profile created!',
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      data: newStudent,
+    };
 
   }
 
@@ -189,44 +189,41 @@ export class AuthService {
     })
 
     if (existingInstructor) {
-        if (existingInstructor.approvalStatus === "pending") {
-          return { success: true, message: "You hahe already submitted an instructor request!" };
-        }
-        if (existingInstructor.approvalStatus === "rejected") {
-            const rejectCount = existingInstructor.rejectCount || 0;
+      if (existingInstructor.approvalStatus === "pending") {
+        return { success: true, message: "You hahe already submitted an instructor request!" };
+      }
+      if (existingInstructor.approvalStatus === "rejected") {
+        const rejectCount = existingInstructor.rejectCount || 0;
 
-            if (rejectCount >= MAX_REJECT_COUNT) {
-                return {
-                    success: false,
-                    message: "You have exceeded the maximum number of instructor requests."
-                };
-            }
-
-            // Reset profile to pending for re-submission
-            await db.update(instructorProfiles)
-                .set({ approvalStatus: "pending" })
-                .where(eq(instructorProfiles.userId, userId));
-
-            return {
-                success: true,
-                message: `Rejectet ${rejectCount} re-submission again !`
-            }
+        if (rejectCount >= MAX_REJECT_COUNT) {
+          return {
+            success: false,
+            message: "You have exceeded the maximum number of instructor requests."
+          };
         }
 
-          // If somehow approved already
-          return { success: true, message: "You are already an approved instructor!" };
-     }
+        // Reset profile to pending for re-submission
+        await db.update(instructorProfiles)
+          .set({ approvalStatus: "pending" })
+          .where(eq(instructorProfiles.userId, userId));
 
-    if (!dto.channelName || typeof dto.channelName !== 'string') {
-      throw new BadRequestException('channelName is required and must be a string');
+        return {
+          success: true,
+          message: `Rejectet ${rejectCount} re-submission again !`
+        }
+      }
+
+      // If somehow approved already
+      return { success: true, message: "You are already an approved instructor!" };
     }
 
     await db.insert(instructorProfiles).values({
       userId,
-      channelName: dto.channelName,
       expertise: dto.expertise,
-      socialLinks: dto.socialLinks,
-      paymentDetails: dto.paymentDetails,
+      bio: dto.bio,
+      experience: dto.experience,
+      reason: dto.reason,
+      socialLinks: dto.socialLinks ?? {},
       // approved remains false by default
     });
 

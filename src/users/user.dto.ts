@@ -2,6 +2,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEmail,
+  IsEnum,
   IsOptional,
   IsString,
   Validate,
@@ -9,20 +10,24 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+import { userRole } from 'src/schema/type';
 
 export class CreateUserDto {
-  @IsString()
-  fullName: string;
-
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  password: string;
-
+  // @IsString()
+  // fullName?: string | "dummy_name";
   @IsOptional()
   @IsString()
-  role?: string;
+  fullName: string = "dummy_name";
+
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  password!: string;
+
+  @IsOptional()
+  @IsEnum(userRole)
+  role?: userRole;
 
   @IsOptional()
   @IsBoolean()
@@ -30,19 +35,19 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  phoneNumber: string;
+  phoneNumber?: string;
 
   @IsOptional()
   @IsString()
-  profilePicture: string;
+  profilePicture?: string;
 
   @IsOptional()
   @IsDateString()
-  dateOfBirth: string;
+  dateOfBirth?: string;
 
   @IsOptional()
   @IsString()
-  state: string;
+  state?: string;
 }
 
 @ValidatorConstraint({ name: 'emailOrPhoneRequired', async: false })
@@ -68,10 +73,10 @@ export class LoginUserDto {
 
 
   @Validate(EmailOrPhoneRequired)
-  dummyField: string; // Just to trigger the custom validator
+  dummyField?: string; // Just to trigger the custom validator
 
   @IsString({ message: 'Password must be a string' })
-  password: string;
+  password!: string;
 
   @IsOptional()
   @IsString({ message: 'Roles must be a string' })
@@ -84,5 +89,5 @@ export class UpdatePassword {
   newPassword?: string;
 
   @IsString({ message: 'Password must be a string' })
-  password: string;
+  password!: string;
 }
